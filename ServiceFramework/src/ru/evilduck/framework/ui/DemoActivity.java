@@ -37,128 +37,131 @@ import android.widget.Toast;
 
 public class DemoActivity extends SFBaseActivity {
 
-    private static final String PROGRESS_DIALOG = "progress-dialog";
+	private static final String PROGRESS_DIALOG = "progress-dialog";
 
-    private EditText text1;
+	private EditText text1;
 
-    private EditText text2;
+	private EditText text2;
 
-    private int requestId = -1;
+	private int requestId = -1;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-	super.onCreate(savedInstanceState);
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-	setContentView(R.layout.main);
+		setContentView(R.layout.main);
 
-	text1 = (EditText) findViewById(R.id.editText1);
-	text2 = (EditText) findViewById(R.id.editText2);
-	text2.setOnEditorActionListener(new OnEditorActionListener() {
-	    @Override
-	    public boolean onEditorAction(TextView textView, int id, KeyEvent event) {
-		if (id == EditorInfo.IME_ACTION_DONE) {
-		    doIt();
+		text1 = (EditText) findViewById(R.id.editText1);
+		text2 = (EditText) findViewById(R.id.editText2);
+		text2.setOnEditorActionListener(new OnEditorActionListener() {
+			@Override
+			public boolean onEditorAction(TextView textView, int id,
+					KeyEvent event) {
+				if (id == EditorInfo.IME_ACTION_DONE) {
+					doIt();
+				}
+				return false;
+			}
+		});
+
+		findViewById(R.id.button_button).setOnClickListener(
+				new View.OnClickListener() {
+					@Override
+					public void onClick(View view) {
+						doIt();
+					}
+
+				});
+	}
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		ProgressDialog progressDialog = new ProgressDialog(this);
+		progressDialog.setMessage("Processing");
+		progressDialog.setOnCancelListener(new OnCancelListener() {
+			@Override
+			public void onCancel(DialogInterface dialog) {
+				getServiceHelper().cancelCommand(requestId);
+			}
+		});
+
+		return progressDialog;
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+
+		if (requestId != -1 && !getServiceHelper().isPending(requestId)) {
+			dismissProgressDialog();
 		}
-		return false;
-	    }
-	});
+	}
 
-	findViewById(R.id.button_button).setOnClickListener(new View.OnClickListener() {
-	    @Override
-	    public void onClick(View view) {
-		doIt();
-	    }
+	private void doIt() {
+		ProgressDialogFragment progress = new ProgressDialogFragment();
+		progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
 
-	});
-    }
+		requestId = getServiceHelper().exampleAction(text1.getText().toString(), text2.getText().toString());
+	}
 
-    @Override
-    protected Dialog onCreateDialog(int id) {
-	ProgressDialog progressDialog = new ProgressDialog(this);
-	progressDialog.setMessage("Processing");
-	progressDialog.setOnCancelListener(new OnCancelListener() {
-	    @Override
-	    public void onCancel(DialogInterface dialog) {
+	@Override
+	public void onServiceCallback(int requestId, Intent requestIntent,
+			int resultCode, Bundle resultData) {
+		super.onServiceCallback(requestId, requestIntent, resultCode,resultData);
+
+		if (getServiceHelper().check(requestIntent, TestActionCommand.class)) {
+			if (resultCode == TestActionCommand.RESPONSE_SUCCESS) {
+				Toast.makeText(this, resultData.getString("data"),Toast.LENGTH_LONG).show();
+				dismissProgressDialog();
+			} else if (resultCode == TestActionCommand.RESPONSE_PROGRESS) {
+				updateProgressDialog(resultData.getInt(SFBaseCommand.EXTRA_PROGRESS, -1));
+			} else {
+				Toast.makeText(this, resultData.getString("error"),Toast.LENGTH_LONG).show();
+				dismissProgressDialog();
+			}
+		}
+	}
+
+	public void cancelCommand() {
 		getServiceHelper().cancelCommand(requestId);
-	    }
-	});
-
-	return progressDialog;
-    }
-
-    @Override
-    protected void onResume() {
-	super.onResume();
-
-	if (requestId != -1 && !getServiceHelper().isPending(requestId)) {
-	    dismissProgressDialog();
-	}
-    }
-
-    private void doIt() {
-	ProgressDialogFragment progress = new ProgressDialogFragment();
-	progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
-
-	requestId = getServiceHelper().exampleAction(text1.getText().toString(), text2.getText().toString());
-    }
-
-    @Override
-    public void onServiceCallback(int requestId, Intent requestIntent, int resultCode, Bundle resultData) {
-	super.onServiceCallback(requestId, requestIntent, resultCode, resultData);
-
-	if (getServiceHelper().check(requestIntent, TestActionCommand.class)) {
-	    if (resultCode == TestActionCommand.RESPONSE_SUCCESS) {
-		Toast.makeText(this, resultData.getString("data"), Toast.LENGTH_LONG).show();
-		dismissProgressDialog();
-	    } else if (resultCode == TestActionCommand.RESPONSE_PROGRESS) {
-		upodateProgressDialog(resultData.getInt(SFBaseCommand.EXTRA_PROGRESS, -1));
-	    } else {
-		Toast.makeText(this, resultData.getString("error"), Toast.LENGTH_LONG).show();
-		dismissProgressDialog();
-	    }
-	}
-    }
-
-    public void cancelCommand() {
-	getServiceHelper().cancelCommand(requestId);
-    }
-
-    public static class ProgressDialogFragment extends DialogFragment {
-
-	@Override
-	public Dialog onCreateDialog(Bundle savedInstanceState) {
-	    ProgressDialog progressDialog = new ProgressDialog(getActivity());
-	    progressDialog.setMessage("Result: 0%");
-
-	    return progressDialog;
 	}
 
-	public void setProgress(int progress) {
-	    ((ProgressDialog) getDialog()).setMessage("Result: " + progress + "%");
+	public static class ProgressDialogFragment extends DialogFragment {
+
+		@Override
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			ProgressDialog progressDialog = new ProgressDialog(getActivity());
+			progressDialog.setMessage("Result: 0%");
+
+			return progressDialog;
+		}
+
+		public void setProgress(int progress) {
+			((ProgressDialog) getDialog()).setMessage("Result: " + progress
+					+ "%");
+		}
+
+		@Override
+		public void onCancel(DialogInterface dialog) {
+			super.onCancel(dialog);
+			((DemoActivity) getActivity()).cancelCommand();
+		}
+
 	}
 
-	@Override
-	public void onCancel(DialogInterface dialog) {
-	    super.onCancel(dialog);
-	    ((DemoActivity) getActivity()).cancelCommand();
+	private void dismissProgressDialog() {
+		ProgressDialogFragment progress = (ProgressDialogFragment) getSupportFragmentManager()
+				.findFragmentByTag(PROGRESS_DIALOG);
+		if (progress != null) {
+			progress.dismiss();
+		}
 	}
 
-    }
-
-    private void dismissProgressDialog() {
-	ProgressDialogFragment progress = (ProgressDialogFragment) getSupportFragmentManager().findFragmentByTag(
-		PROGRESS_DIALOG);
-	if (progress != null) {
-	    progress.dismiss();
+	private void updateProgressDialog(int progress) {
+		ProgressDialogFragment progressDialog = (ProgressDialogFragment) getSupportFragmentManager().findFragmentByTag(PROGRESS_DIALOG);
+		if (progressDialog != null) {
+			progressDialog.setProgress(progress);
+		}
 	}
-    }
-
-    private void upodateProgressDialog(int progress) {
-	ProgressDialogFragment progressDialog = (ProgressDialogFragment) getSupportFragmentManager().findFragmentByTag(
-		PROGRESS_DIALOG);
-	if (progressDialog != null) {
-	    progressDialog.setProgress(progress);
-	}
-    }
 
 }
