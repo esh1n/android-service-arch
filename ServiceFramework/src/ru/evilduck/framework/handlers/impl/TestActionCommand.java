@@ -16,19 +16,12 @@
  */
 package ru.evilduck.framework.handlers.impl;
 
-import java.util.Random;
-
 import ru.evilduck.framework.handlers.SFBaseCommand;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.os.ResultReceiver;
 import android.text.TextUtils;
-import android.util.Log;
 
-public class TestActionCommand extends SFBaseCommand {
+@SuppressWarnings("serial")
+public class TestActionCommand extends SFBaseCommand<String> {
 
 	private static final String TAG = "TestActionCommand";
 
@@ -39,45 +32,14 @@ public class TestActionCommand extends SFBaseCommand {
 		this.arg1 = arg1;
 		this.arg2 = arg2;
 	}
-	
+
 	@Override
-	public void doExecute(Intent intent, Context context,
-			ResultReceiver callback) {
-		Bundle data = new Bundle();
-
-		Random rnd = new Random();
-
-		int progress = 0;
-		sendProgress(progress);
-		
-
-			while (progress < 100) {
-				int mills=rnd.nextInt(300) + 200;
-				Log.d(TAG, "before sleep "+mills);
-				Log.d(TAG, "after sleep "+mills);
-				if (cancelled) {
-					Log.w(TAG, "Command was cancelled");
-					return;
-				}
-
-				progress += rnd.nextInt(40);
-				if (progress > 100) {
-					progress = 100;
-				}
-				sendProgress(progress);
-			}
-		
-
+	public String execute(Context context) {
 		if (TextUtils.isEmpty(arg1) || TextUtils.isEmpty(arg2)) {
-			data.putString("error", "Surprise!");
-			notifyFailure(data);
+			return "Surprise!";
 		} else {
-			data.putString("data", arg1 + arg2);
-			notifySuccess(data);
+			return arg1 + arg2;
 		}
 	}
-
-	
-	
 
 }

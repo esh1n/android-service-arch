@@ -4,5 +4,11 @@
     <string name="hello">Hello World, ServiceFrameworkActivity!</string>
     <string name="app_name">ServiceFramework</string>
     <string name="concatenate_">Concatenate!</string>
+    
+    
+    <string name="error_no_internet_connection">No internet connection</string>
+    <string name="error_database">Database Error</string>
+    <string name="error_server_toast">Server Error</string>
+    <string name="common_error_unexpected">An unexpected error occurred during last operation.</string>
 
 </resources>

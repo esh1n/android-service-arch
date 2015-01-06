@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import ru.evilduck.framework.handlers.SFBaseCommand;
 import ru.evilduck.framework.handlers.impl.TestActionCommand;
+import ru.evilduck.framework.service.CommandExecutor;
 import ru.evilduck.framework.service.SFCommandExecutorService;
 import android.app.Application;
 import android.content.Context;
@@ -103,7 +104,7 @@ public class SFServiceHelper {
 					protected void onReceiveResult(int resultCode,Bundle resultData) {
 						Intent originalIntent = pendingActivities.get(requestId);
 						if (isPending(requestId)) {
-							if (resultCode != SFBaseCommand.RESPONSE_PROGRESS) {
+							if (resultCode != CommandExecutor.RESPONSE_PROGRESS) {
 								pendingActivities.remove(requestId);
 							}
 

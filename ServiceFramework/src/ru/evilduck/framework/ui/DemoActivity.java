@@ -18,8 +18,8 @@ package ru.evilduck.framework.ui;
 
 import ru.evilduck.framework.R;
 import ru.evilduck.framework.SFBaseActivity;
-import ru.evilduck.framework.handlers.SFBaseCommand;
 import ru.evilduck.framework.handlers.impl.TestActionCommand;
+import ru.evilduck.framework.service.CommandExecutor;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -110,11 +110,11 @@ public class DemoActivity extends SFBaseActivity {
 		super.onServiceCallback(requestId, requestIntent, resultCode,resultData);
 
 		if (getServiceHelper().check(requestIntent, TestActionCommand.class)) {
-			if (resultCode == TestActionCommand.RESPONSE_SUCCESS) {
-				Toast.makeText(this, resultData.getString("data"),Toast.LENGTH_LONG).show();
+			if (resultCode == CommandExecutor.RESPONSE_SUCCESS) {
+				Toast.makeText(this, resultData.getString(CommandExecutor.EXTRA_RESULT),Toast.LENGTH_LONG).show();
 				dismissProgressDialog();
-			} else if (resultCode == TestActionCommand.RESPONSE_PROGRESS) {
-				updateProgressDialog(resultData.getInt(SFBaseCommand.EXTRA_PROGRESS, -1));
+			} else if (resultCode == CommandExecutor.RESPONSE_PROGRESS) {
+				updateProgressDialog(resultData.getInt(CommandExecutor.EXTRA_PROGRESS, -1));
 			} else {
 				Toast.makeText(this, resultData.getString("error"),Toast.LENGTH_LONG).show();
 				dismissProgressDialog();

@@ -25,7 +25,6 @@ import ru.evilduck.framework.handlers.SFBaseCommand;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.os.Process;
 import android.os.ResultReceiver;
 import android.util.Log;
 
@@ -105,8 +104,7 @@ public class SFCommandExecutorService extends Service {
 
 		@Override
 		public void run() {
-			Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-			command.execute(intent, getApplicationContext(),getReceiver(intent));
+			CommandExecutor.executeCommand(getApplicationContext(), command, intent, getReceiver(intent));
 			shutdown();
 		}
 
