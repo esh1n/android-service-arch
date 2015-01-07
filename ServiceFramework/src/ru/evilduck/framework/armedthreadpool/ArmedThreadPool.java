@@ -6,12 +6,13 @@
 package ru.evilduck.framework.armedthreadpool;
 
 import java.io.Serializable;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import ru.evilduck.framework.armedthreadpool.wrapper.CallableCommandWrapper;
 import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
+import ru.evilduck.framework.armedthreadpool.wrapper.RunningPriorityTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
 import ru.evilduck.framework.handlers.BaseCommand;
 import ru.evilduck.framework.service.ErrorProcessor;
@@ -43,9 +45,16 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 
 	// Utitlity method to create thread pool easily
 
-	public static ArmedThreadPool newFixedThreadPool(int nThreads) {
+	public static ArmedThreadPool newFixedThreadPoolWithPriority(int nThreads) {
 		return new ArmedThreadPool(nThreads, nThreads, 0L,TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>());
 	}
+	public static ArmedThreadPool newFixedThreadPool(int nThreads) {
+		return new ArmedThreadPool(nThreads, nThreads, 0L,TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+	}
+	public static ArmedThreadPool newSingleThreadExecutor() {
+		return newFixedThreadPool(1);
+	}
+
 
 	// Submit with New comparable task
 
@@ -74,7 +83,7 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 	 */
 	public <T extends Serializable> Future<?> submit(BaseCommand<T> command,int priority, ResultReceiver callback,int id, Context context) {
 		CallableCommandWrapper wrapper = new CallableCommandWrapper(context, command);
-		RunningTask task = new RunningTask(id,wrapper,callback, priority);
+		RunningPriorityTask task = new RunningPriorityTask(id,wrapper,callback, priority);
 		return super.submit(task);
 	}
 
@@ -86,15 +95,16 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 	@Override
 	protected void afterExecute(Runnable r, Throwable t) {
 		super.afterExecute(r, t);
+		Log.i(TAG, "AFTEREXECUTE");
 		if (r != null && r instanceof RunningTask) {
 			RunningTask futureTask = (RunningTask) r;
 			ResultReceiver callback = futureTask.getCallback();
 			if (t == null) {
 				try {
 					if (futureTask.isDone()) {
-						Serializable result = futureTask.get();
+						Serializable result = (Serializable) futureTask.get();
 						if (result != null) {
-							Log.d("Test","SEND RESULT OF TASK WITH PRIORITY "+futureTask.getPriority());
+//							Log.d("Test","SEND RESULT OF TASK WITH PRIORITY "+futureTask.getPriority());
 							NotifySubscriberUtil.notifySuccess(result, callback);
 						}
 						else{
@@ -122,6 +132,7 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 		}
 		
 	}
+
 	private void onCompleteCommand(int id){
 		if(onCompletedCommandListener!=null){
 			onCompletedCommandListener.onCompletedCommand(id);
@@ -136,4 +147,5 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 		this.onCompletedCommandListener = onCompletedCommandListener;
 	}
 
+	
 }

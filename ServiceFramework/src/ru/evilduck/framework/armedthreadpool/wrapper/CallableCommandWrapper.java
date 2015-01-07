@@ -29,7 +29,7 @@ public class CallableCommandWrapper<T extends Serializable> implements Callable<
     @Override
     public T call() throws Exception {
     	Log.d("Test", "execute command");
-    	Thread.sleep(500);
+    	Thread.sleep(1500);
         return executable.execute(context);
     }
 

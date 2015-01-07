@@ -61,6 +61,7 @@ public class SFServiceHelper {
 	public int exampleActionHighPriority(String argumentA, String argumentB) {
 		Log.d("Test","PREPARE COMMAND WITH HIGH PRIORITY");
 		final int requestId = createId();
+		Log.d("Test","id "+requestId);
 		Intent i = buildTaskWithHighPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
 		return runRequest(requestId, i);
 	}
@@ -68,7 +69,15 @@ public class SFServiceHelper {
 	public int exampleActionNormalPriority(String argumentA, String argumentB) {
 		Log.d("Test","PREPARE COMMAND WITH NORMAL PRIORITY");
 		final int requestId = createId();
+		Log.d("Test","id "+requestId);
 		Intent i = buildTaskWithNormalPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
+		return runRequest(requestId, i);
+	}
+	public int exampleActionTrancsactional(String argumentA, String argumentB) {
+		Log.d("Test","PREPARE COMMAND WITH TRANCSACTION MODE");
+		final int requestId = createId();
+		Log.d("Test","id "+requestId);
+		Intent i = createIntentToExecuteInTransactionalMode(application, requestId, new ConcatenateCommand(argumentA,argumentB));
 		return runRequest(requestId, i);
 	}
 
@@ -103,18 +112,27 @@ public class SFServiceHelper {
 	}
  
 	private Intent buildTaskWithNormalPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
-		return createIntent(context, requestId, command, ComparableFutureTask.NORMAL_PRIORITY);
+		return createIntentWithPriority(context, requestId, command, ComparableFutureTask.NORMAL_PRIORITY);
 	}
 	
 	private Intent buildTaskWithHighPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
-		return createIntent(context, requestId, command, ComparableFutureTask.HIGH_PRIORITY);
+		return createIntentWithPriority(context, requestId, command, ComparableFutureTask.HIGH_PRIORITY);
 	}
-	
-	private Intent createIntent(final Context context,final int requestId,BaseCommand<?> command,int priority) {
+	private Intent createIntentWithPriority(final Context context,final int requestId,BaseCommand<?> command,int priority){
+		Intent intent=createIntent(context, requestId, command);
+		intent.putExtra(CommandExecutorService.EXTRA_TRANCSACTIONAL_EXECUTION_MODE, false);
+		intent.putExtra(CommandExecutorService.EXTRA_COMMAND_PRIORITY, priority);
+		return intent;
+	}
+	private Intent createIntentToExecuteInTransactionalMode(final Context context,final int requestId,BaseCommand<?> command){
+		Intent intent=createIntent(context, requestId, command);
+		intent.putExtra(CommandExecutorService.EXTRA_TRANCSACTIONAL_EXECUTION_MODE, true);
+		return intent;
+	}
+	private Intent createIntent(final Context context,final int requestId,BaseCommand<?> command) {
 		Intent i = new Intent(context, CommandExecutorService.class);
 		i.setAction(CommandExecutorService.ACTION_EXECUTE_COMMAND);
 		i.putExtra(CommandExecutorService.EXTRA_COMMAND, command);
-		i.putExtra(CommandExecutorService.EXTRA_COMMAND_PRIORITY, priority);
 		i.putExtra(CommandExecutorService.EXTRA_REQUEST_ID, requestId);
 		i.putExtra(CommandExecutorService.EXTRA_STATUS_RECEIVER,
 				new ResultReceiver(new Handler()) {

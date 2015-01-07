@@ -46,6 +46,10 @@ public class DemoActivity extends SFBaseActivity {
 
 	private int highPriorityRequestId = -1;
 	private int normalPriorityRequestId = -1;
+	private int dummyNormalPriorityRequestId1 = -1;
+	private int dummyNormalPriorityRequestId2 = -1;
+	private int transactionalRequestId1 = -3;
+	private int transactionalRequestId2 = -4;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -107,15 +111,19 @@ public class DemoActivity extends SFBaseActivity {
 		ProgressDialogFragment progress = new ProgressDialogFragment();
 		progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
         Log.d("Test","START TWO COMMANDS");
-		normalPriorityRequestId = getServiceHelper().exampleActionNormalPriority("NORMAL ".concat(text1.getText().toString()), text2.getText().toString());
+        dummyNormalPriorityRequestId1 = getServiceHelper().exampleActionNormalPriority("NORMAL1 ".concat(text1.getText().toString()), text2.getText().toString());
+        dummyNormalPriorityRequestId2 = getServiceHelper().exampleActionNormalPriority("NORMAL2 ".concat(text1.getText().toString()), text2.getText().toString());
+        normalPriorityRequestId = getServiceHelper().exampleActionNormalPriority("NORMAL3 ".concat(text1.getText().toString()), text2.getText().toString());
 		highPriorityRequestId = getServiceHelper().exampleActionHighPriority("HIGH ".concat(text1.getText().toString()), text2.getText().toString());
+		transactionalRequestId1 = getServiceHelper().exampleActionTrancsactional("TRANCSACT1 ".concat(text1.getText().toString()), text2.getText().toString());
+		transactionalRequestId2 = getServiceHelper().exampleActionTrancsactional("TRANCSACT2 ".concat(text1.getText().toString()), text2.getText().toString());
 		
 	}
 
 	@Override
 	public void onServiceCallback(int requestId, Intent requestIntent,int resultCode, Bundle resultData) {
 		super.onServiceCallback(requestId, requestIntent, resultCode,resultData);
-		 Log.d("Test","GOT RESULTS OF TWO COMMANDS");
+		 Log.e("Test","GOT RESULTS OF TWO COMMANDS");
 		if (getServiceHelper().check(requestIntent, ConcatenateCommand.class)) {
 			if (resultCode == NotifySubscriberUtil.RESPONSE_SUCCESS) {
 				Toast.makeText(this, resultData.getString(NotifySubscriberUtil.EXTRA_RESULT),Toast.LENGTH_LONG).show();

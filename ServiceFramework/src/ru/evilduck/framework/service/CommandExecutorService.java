@@ -23,6 +23,7 @@ import ru.evilduck.framework.SFApplication;
 import ru.evilduck.framework.armedthreadpool.ArmedThreadPool;
 import ru.evilduck.framework.armedthreadpool.wrapper.CallableCommandWrapper;
 import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
+import ru.evilduck.framework.armedthreadpool.wrapper.RunningPriorityTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
 import ru.evilduck.framework.handlers.BaseCommand;
 import android.app.Service;
@@ -33,7 +34,7 @@ import android.util.Log;
 
 public class CommandExecutorService extends Service implements OnCompletedCommandListener {
 
-	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 3;
+	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 1;
 
 	public static final String ACTION_EXECUTE_COMMAND = SFApplication.PACKAGE.concat(".ACTION_EXECUTE_COMMAND");
 
@@ -47,11 +48,13 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	
 	public static final String EXTRA_COMMAND_PRIORITY = SFApplication.PACKAGE.concat(".EXTRA_COMMAND_PRIORITY");
 
-	private ArmedThreadPool executorParallel = ArmedThreadPool.newFixedThreadPool(NUM_THREADS_OF_PARALLEL_EXECUTOR);
+	public static final String EXTRA_TRANCSACTIONAL_EXECUTION_MODE = SFApplication.PACKAGE.concat(".EXTRA_EXECUTION_MODE");;
 
-//	private ExecutorService executorTransactional = Executors.newSingleThreadExecutor();
+	private ArmedThreadPool executorParallel = ArmedThreadPool.newFixedThreadPoolWithPriority(NUM_THREADS_OF_PARALLEL_EXECUTOR);
+	private ArmedThreadPool executorTransactional = ArmedThreadPool.newSingleThreadExecutor();
 
-	private ConcurrentHashMap<Integer, RunningTask> runningTasks = new ConcurrentHashMap<Integer, RunningTask>();
+	private ConcurrentHashMap<Integer, RunningPriorityTask> parallerRunningTasks = new ConcurrentHashMap<Integer, RunningPriorityTask>();
+	private ConcurrentHashMap<Integer, RunningTask> trancsactionalRunningTasks = new ConcurrentHashMap<Integer, RunningTask>();
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -62,11 +65,12 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	public void onCreate() {
 		super.onCreate();
 		executorParallel.setOnCompletedCommandListener(this);
+		executorTransactional.setOnCompletedCommandListener(this);
 	}
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-//		executorTransactional.shutdownNow();
+		executorTransactional.shutdownNow();
 		executorParallel.shutdownNow();
 	}
 
@@ -74,28 +78,55 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d("Test", "onStartCommand");
 		if (ACTION_EXECUTE_COMMAND.equals(intent.getAction())) {
-			RunningTask task=unpuckIntentToTask(intent);
-			Log.d("Test", "Submit task and put it to wrapper queue");
-			runningTasks.put(task.getId(), task);
-			executorParallel.submit(task);
+			boolean isTransactionalMode=intent.getBooleanExtra(EXTRA_TRANCSACTIONAL_EXECUTION_MODE, true);
+			if(isTransactionalMode){
+				Log.d("Test", "TransactionalMode ");
+				RunningTask task=unpuckIntentToSimpleTask(intent);
+				trancsactionalRunningTasks.put(task.getId(), task);
+				executorTransactional.submit(task);
+			}
+			else{
+				Log.d("Test", "ParallelMode");
+				RunningPriorityTask task=unpuckIntentToTask(intent);
+				Log.d("Test", "Submit task and put it to wrapper queue");
+				parallerRunningTasks.put(task.getId(), task);
+				executorParallel.submit(task);
+			}
+			
 		}
 		if (ACTION_CANCEL_COMMAND.equals(intent.getAction())) {
-			RunningTask runningCommand = runningTasks.get(getCommandId(intent));
-			if (runningCommand != null) {
-				runningCommand.cancel(true);
-			}
+			int commandId=getCommandId(intent);
+			cancelCommand(commandId);
 		}
 
 		return START_NOT_STICKY;
 	}
 
-	private RunningTask unpuckIntentToTask(Intent intent){
+	private void cancelCommand(int commandId) {
+		RunningTask  runningCommand= parallerRunningTasks.get(commandId);
+		//TODO merge two collections
+		if (runningCommand == null) {
+			runningCommand=trancsactionalRunningTasks.get(commandId);
+		}
+		if(runningCommand!=null){
+			runningCommand.cancel(true);
+		}
+	}
+
+	private RunningPriorityTask unpuckIntentToTask(Intent intent){
 		int priority=getPriority(intent);
 		BaseCommand command=getCommand(intent);
 		CallableCommandWrapper commandWrapper=new CallableCommandWrapper(getApplicationContext(), command);
 		ResultReceiver resultReceiver=getReceiver(intent);
 		int id =getCommandId(intent);
-		return new RunningTask(id,commandWrapper,resultReceiver,priority);
+		return new RunningPriorityTask(id,commandWrapper,resultReceiver,priority);
+	}
+	private RunningTask unpuckIntentToSimpleTask(Intent intent){
+		BaseCommand command=getCommand(intent);
+		CallableCommandWrapper commandWrapper=new CallableCommandWrapper(getApplicationContext(), command);
+		ResultReceiver resultReceiver=getReceiver(intent);
+		int id =getCommandId(intent);
+		return new RunningTask(id,commandWrapper,resultReceiver);
 	}
 	
 	
@@ -118,11 +149,17 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	@Override
 	public void onCompletedCommand(int id) {
 		Log.d("Test", "onCompletedCommand");
-		runningTasks.remove(id);
-		if (runningTasks.isEmpty()) {
+		//TODO FIX PERFOMANCE
+		if(parallerRunningTasks.containsKey(id)){
+			parallerRunningTasks.remove(id);
+		}else if(trancsactionalRunningTasks.containsKey(id)){
+			trancsactionalRunningTasks.remove(id);	
+		}
+		if (parallerRunningTasks.isEmpty()&&trancsactionalRunningTasks.isEmpty()) {
 			Log.d("Test", "STOP SELF because No Tasks");
 			stopSelf();
-		}
+		}	
+		
 		
 	}
     
