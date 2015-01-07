@@ -33,7 +33,7 @@ import android.util.Log;
 
 public class CommandExecutorService extends Service implements OnCompletedCommandListener {
 
-	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 3;
+	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 1;
 
 	public static final String ACTION_EXECUTE_COMMAND = SFApplication.PACKAGE.concat(".ACTION_EXECUTE_COMMAND");
 
@@ -49,7 +49,6 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 
 	private ArmedThreadPool executorParallel = ArmedThreadPool.newFixedThreadPool(NUM_THREADS_OF_PARALLEL_EXECUTOR);
 
-//	private ExecutorService executorTransactional = Executors.newSingleThreadExecutor();
 
 	private ConcurrentHashMap<Integer, RunningTask> runningTasks = new ConcurrentHashMap<Integer, RunningTask>();
 

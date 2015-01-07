@@ -58,6 +58,19 @@ public class SFServiceHelper {
 
 	// =========================================
 
+	public int exampleActionLowPriority(String argumentA, String argumentB) {
+		Log.d("Test","PREPARE COMMAND WITH LOW PRIORITY");
+		final int requestId = createId();
+		Intent i = buildTaskWithLowPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
+		return runRequest(requestId, i);
+	}
+	
+	public int exampleActionLowestPriority(String argumentA, String argumentB) {
+		Log.d("Test","PREPARE COMMAND WITH  LOWest PRIORITY");
+		final int requestId = createId();
+		Intent i = buildTaskWithLowestPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
+		return runRequest(requestId, i);
+	}
 	public int exampleActionHighPriority(String argumentA, String argumentB) {
 		Log.d("Test","PREPARE COMMAND WITH HIGH PRIORITY");
 		final int requestId = createId();
@@ -65,6 +78,12 @@ public class SFServiceHelper {
 		return runRequest(requestId, i);
 	}
 	
+	public int exampleActionExtraHighPriority(String argumentA, String argumentB) {
+		Log.d("Test","PREPARE COMMAND WITH EXTRA HIGH PRIORITY");
+		final int requestId = createId();
+		Intent i = buildTaskWithExtraHighPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
+		return runRequest(requestId, i);
+	}
 	public int exampleActionNormalPriority(String argumentA, String argumentB) {
 		Log.d("Test","PREPARE COMMAND WITH NORMAL PRIORITY");
 		final int requestId = createId();
@@ -108,6 +127,15 @@ public class SFServiceHelper {
 	
 	private Intent buildTaskWithHighPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
 		return createIntent(context, requestId, command, ComparableFutureTask.HIGH_PRIORITY);
+	}
+	private Intent buildTaskWithExtraHighPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
+		return createIntent(context, requestId, command, ComparableFutureTask.EXTRA_HIGH_PRIORITY);
+	}
+	private Intent buildTaskWithLowPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
+		return createIntent(context, requestId, command, ComparableFutureTask.LOW_PRIORITY);
+	}
+	private Intent buildTaskWithLowestPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
+		return createIntent(context, requestId, command, ComparableFutureTask.LOWEST_PRIORITY);
 	}
 	
 	private Intent createIntent(final Context context,final int requestId,BaseCommand<?> command,int priority) {

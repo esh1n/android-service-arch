@@ -46,6 +46,12 @@ public class DemoActivity extends SFBaseActivity {
 
 	private int highPriorityRequestId = -1;
 	private int normalPriorityRequestId = -1;
+	private int extraHighPriorityRequestId = -1;
+
+	private int lowestPriorityRequestId;
+
+	private int lowPriorityRequestId;
+	
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -107,8 +113,11 @@ public class DemoActivity extends SFBaseActivity {
 		ProgressDialogFragment progress = new ProgressDialogFragment();
 		progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
         Log.d("Test","START TWO COMMANDS");
+        extraHighPriorityRequestId = getServiceHelper().exampleActionExtraHighPriority("EXTRAHIGH ".concat(text1.getText().toString()), text2.getText().toString());
 		normalPriorityRequestId = getServiceHelper().exampleActionNormalPriority("NORMAL ".concat(text1.getText().toString()), text2.getText().toString());
 		highPriorityRequestId = getServiceHelper().exampleActionHighPriority("HIGH ".concat(text1.getText().toString()), text2.getText().toString());
+		lowestPriorityRequestId = getServiceHelper().exampleActionLowestPriority("Lowest ".concat(text1.getText().toString()), text2.getText().toString());
+		lowPriorityRequestId = getServiceHelper().exampleActionLowPriority("Low ".concat(text1.getText().toString()), text2.getText().toString());
 		
 	}
 
