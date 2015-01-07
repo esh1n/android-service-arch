@@ -8,10 +8,10 @@ import android.util.Log;
 
 public class RunningPriorityTask<T extends Serializable> extends RunningTask<T> implements Comparable<RunningPriorityTask<T>> {
 
-	public static final int LOW_PRIORITY = 0;
-	public static final int NORMAL_PRIORITY = 2;
-	public static final int HIGH_PRIORITY = 4;
-	public static final int EXTRA_HIGH_PRIORITY = 6;
+	public static final int LOW_PRIORITY = 4;
+	public static final int NORMAL_PRIORITY = 3;
+	public static final int HIGH_PRIORITY = 2;
+	public static final int EXTRA_HIGH_PRIORITY = 1;
 
 	volatile int priority;
 

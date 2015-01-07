@@ -112,8 +112,7 @@ public class DemoActivity extends SFBaseActivity {
 		progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
         Log.d("Test","START TWO COMMANDS");
         dummyNormalPriorityRequestId1 = getServiceHelper().exampleActionNormalPriority("NORMAL1 ".concat(text1.getText().toString()), text2.getText().toString());
-        dummyNormalPriorityRequestId2 = getServiceHelper().exampleActionNormalPriority("NORMAL2 ".concat(text1.getText().toString()), text2.getText().toString());
-        normalPriorityRequestId = getServiceHelper().exampleActionNormalPriority("NORMAL3 ".concat(text1.getText().toString()), text2.getText().toString());
+        normalPriorityRequestId = getServiceHelper().exampleActionNormalPriority("NORMAL2 ".concat(text1.getText().toString()), text2.getText().toString());
 		highPriorityRequestId = getServiceHelper().exampleActionHighPriority("HIGH ".concat(text1.getText().toString()), text2.getText().toString());
 		transactionalRequestId1 = getServiceHelper().exampleActionTrancsactional("TRANCSACT1 ".concat(text1.getText().toString()), text2.getText().toString());
 		transactionalRequestId2 = getServiceHelper().exampleActionTrancsactional("TRANCSACT2 ".concat(text1.getText().toString()), text2.getText().toString());

@@ -20,11 +20,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
+import ru.evilduck.framework.armedthreadpool.wrapper.RunningPriorityTask;
 import ru.evilduck.framework.handlers.BaseCommand;
 import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
-import ru.evilduck.framework.service.NotifySubscriberUtil;
 import ru.evilduck.framework.service.CommandExecutorService;
+import ru.evilduck.framework.service.NotifySubscriberUtil;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -112,11 +112,11 @@ public class SFServiceHelper {
 	}
  
 	private Intent buildTaskWithNormalPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
-		return createIntentWithPriority(context, requestId, command, ComparableFutureTask.NORMAL_PRIORITY);
+		return createIntentWithPriority(context, requestId, command, RunningPriorityTask.NORMAL_PRIORITY);
 	}
 	
 	private Intent buildTaskWithHighPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
-		return createIntentWithPriority(context, requestId, command, ComparableFutureTask.HIGH_PRIORITY);
+		return createIntentWithPriority(context, requestId, command, RunningPriorityTask.HIGH_PRIORITY);
 	}
 	private Intent createIntentWithPriority(final Context context,final int requestId,BaseCommand<?> command,int priority){
 		Intent intent=createIntent(context, requestId, command);

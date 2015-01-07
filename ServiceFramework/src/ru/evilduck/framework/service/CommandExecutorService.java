@@ -139,7 +139,7 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 		return (BaseCommand) intent.getSerializableExtra(EXTRA_COMMAND);
 	}
 	private int getPriority(Intent intent) {
-		return intent.getIntExtra(EXTRA_COMMAND_PRIORITY, ComparableFutureTask.NORMAL_PRIORITY);
+		return intent.getIntExtra(EXTRA_COMMAND_PRIORITY, RunningPriorityTask.NORMAL_PRIORITY);
 	}
 
 	private int getCommandId(Intent intent) {
