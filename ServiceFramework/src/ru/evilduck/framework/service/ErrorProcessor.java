@@ -31,24 +31,38 @@ public class ErrorProcessor {
 
 	private static final int FAKE_STRING_RES_ID = -1;
 
-	public static Bundle getExceptionBundle(Exception exception, Context context) {
+	public static Bundle getExceptionBundle(Exception exception) {
 		Bundle bundle = new Bundle();
 		if (exception instanceof InternetConnectionException||exception.getCause() instanceof InternetConnectionException) {
 			Log.d("ARCH","CONNECTION_ERROR" +exception.getClass());
-			bundle.putInt(CommandExecutor.ERROR_CODE, CONNECTION_ERROR);
+			bundle.putInt(NotifySubscriberUtil.ERROR_CODE, CONNECTION_ERROR);
 		}
 		if (exception instanceof SQLException || exception.getCause() instanceof SQLException) {
-			bundle.putInt(CommandExecutor.ERROR_CODE, DATA_BASE_ERROR);
+			bundle.putInt(NotifySubscriberUtil.ERROR_CODE, DATA_BASE_ERROR);
 		}
 		if(exception instanceof ServerException || exception.getCause() instanceof ServerException){
-			bundle.putInt(CommandExecutor.ERROR_CODE, SERVER_ERROR);
+			bundle.putInt(NotifySubscriberUtil.ERROR_CODE, SERVER_ERROR);
+		}
+		return bundle;
+	}
+	public static Bundle getExceptionBundle(Throwable exception) {
+		Bundle bundle = new Bundle();
+		if (exception instanceof InternetConnectionException||exception.getCause() instanceof InternetConnectionException) {
+			Log.d("ARCH","CONNECTION_ERROR" +exception.getClass());
+			bundle.putInt(NotifySubscriberUtil.ERROR_CODE, CONNECTION_ERROR);
+		}
+		if (exception instanceof SQLException || exception.getCause() instanceof SQLException) {
+			bundle.putInt(NotifySubscriberUtil.ERROR_CODE, DATA_BASE_ERROR);
+		}
+		if(exception instanceof ServerException || exception.getCause() instanceof ServerException){
+			bundle.putInt(NotifySubscriberUtil.ERROR_CODE, SERVER_ERROR);
 		}
 		return bundle;
 	}
 
 	public static void processError(Bundle bundle, Context context) {
 		int stringResourseId = FAKE_STRING_RES_ID;
-		switch (bundle.getInt(CommandExecutor.ERROR_CODE)) {
+		switch (bundle.getInt(NotifySubscriberUtil.ERROR_CODE)) {
 		case DATA_BASE_ERROR:
 			stringResourseId = R.string.error_database;
 			break;

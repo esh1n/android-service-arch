@@ -18,8 +18,8 @@ package ru.evilduck.framework.ui;
 
 import ru.evilduck.framework.R;
 import ru.evilduck.framework.SFBaseActivity;
-import ru.evilduck.framework.handlers.impl.TestActionCommand;
-import ru.evilduck.framework.service.CommandExecutor;
+import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
+import ru.evilduck.framework.service.NotifySubscriberUtil;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -27,6 +27,7 @@ import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -43,7 +44,8 @@ public class DemoActivity extends SFBaseActivity {
 
 	private EditText text2;
 
-	private int requestId = -1;
+	private int highPriorityRequestId = -1;
+	private int normalPriorityRequestId = -1;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -81,7 +83,8 @@ public class DemoActivity extends SFBaseActivity {
 		progressDialog.setOnCancelListener(new OnCancelListener() {
 			@Override
 			public void onCancel(DialogInterface dialog) {
-				getServiceHelper().cancelCommand(requestId);
+				getServiceHelper().cancelCommand(highPriorityRequestId);
+				getServiceHelper().cancelCommand(normalPriorityRequestId);
 			}
 		});
 
@@ -92,7 +95,10 @@ public class DemoActivity extends SFBaseActivity {
 	protected void onResume() {
 		super.onResume();
 
-		if (requestId != -1 && !getServiceHelper().isPending(requestId)) {
+		if (highPriorityRequestId != -1 && !getServiceHelper().isPending(highPriorityRequestId)) {
+			dismissProgressDialog();
+		}
+		if (normalPriorityRequestId != -1 && !getServiceHelper().isPending(normalPriorityRequestId)) {
 			dismissProgressDialog();
 		}
 	}
@@ -100,21 +106,22 @@ public class DemoActivity extends SFBaseActivity {
 	private void doIt() {
 		ProgressDialogFragment progress = new ProgressDialogFragment();
 		progress.show(getSupportFragmentManager(), PROGRESS_DIALOG);
-
-		requestId = getServiceHelper().exampleAction(text1.getText().toString(), text2.getText().toString());
+        Log.d("Test","START TWO COMMANDS");
+		normalPriorityRequestId = getServiceHelper().exampleActionNormalPriority("NORMAL ".concat(text1.getText().toString()), text2.getText().toString());
+		highPriorityRequestId = getServiceHelper().exampleActionHighPriority("HIGH ".concat(text1.getText().toString()), text2.getText().toString());
+		
 	}
 
 	@Override
-	public void onServiceCallback(int requestId, Intent requestIntent,
-			int resultCode, Bundle resultData) {
+	public void onServiceCallback(int requestId, Intent requestIntent,int resultCode, Bundle resultData) {
 		super.onServiceCallback(requestId, requestIntent, resultCode,resultData);
-
-		if (getServiceHelper().check(requestIntent, TestActionCommand.class)) {
-			if (resultCode == CommandExecutor.RESPONSE_SUCCESS) {
-				Toast.makeText(this, resultData.getString(CommandExecutor.EXTRA_RESULT),Toast.LENGTH_LONG).show();
+		 Log.d("Test","GOT RESULTS OF TWO COMMANDS");
+		if (getServiceHelper().check(requestIntent, ConcatenateCommand.class)) {
+			if (resultCode == NotifySubscriberUtil.RESPONSE_SUCCESS) {
+				Toast.makeText(this, resultData.getString(NotifySubscriberUtil.EXTRA_RESULT),Toast.LENGTH_LONG).show();
 				dismissProgressDialog();
-			} else if (resultCode == CommandExecutor.RESPONSE_PROGRESS) {
-				updateProgressDialog(resultData.getInt(CommandExecutor.EXTRA_PROGRESS, -1));
+			} else if (resultCode == NotifySubscriberUtil.RESPONSE_PROGRESS) {
+				updateProgressDialog(resultData.getInt(NotifySubscriberUtil.EXTRA_PROGRESS, -1));
 			} else {
 				Toast.makeText(this, resultData.getString("error"),Toast.LENGTH_LONG).show();
 				dismissProgressDialog();
@@ -123,7 +130,8 @@ public class DemoActivity extends SFBaseActivity {
 	}
 
 	public void cancelCommand() {
-		getServiceHelper().cancelCommand(requestId);
+		getServiceHelper().cancelCommand(highPriorityRequestId);
+		getServiceHelper().cancelCommand(normalPriorityRequestId);
 	}
 
 	public static class ProgressDialogFragment extends DialogFragment {

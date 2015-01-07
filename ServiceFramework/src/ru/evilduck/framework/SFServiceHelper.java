@@ -20,17 +20,18 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ru.evilduck.framework.handlers.SFBaseCommand;
-import ru.evilduck.framework.handlers.impl.TestActionCommand;
-import ru.evilduck.framework.service.CommandExecutor;
-import ru.evilduck.framework.service.SFCommandExecutorService;
+import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
+import ru.evilduck.framework.handlers.BaseCommand;
+import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
+import ru.evilduck.framework.service.NotifySubscriberUtil;
+import ru.evilduck.framework.service.CommandExecutorService;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Parcelable;
 import android.os.ResultReceiver;
+import android.util.Log;
 import android.util.SparseArray;
 
 public class SFServiceHelper {
@@ -57,18 +58,26 @@ public class SFServiceHelper {
 
 	// =========================================
 
-	public int exampleAction(String argumentA, String argumentB) {
+	public int exampleActionHighPriority(String argumentA, String argumentB) {
+		Log.d("Test","PREPARE COMMAND WITH HIGH PRIORITY");
 		final int requestId = createId();
-		Intent i = createIntent(application, new TestActionCommand(argumentA,argumentB), requestId);
+		Intent i = buildTaskWithHighPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
+		return runRequest(requestId, i);
+	}
+	
+	public int exampleActionNormalPriority(String argumentA, String argumentB) {
+		Log.d("Test","PREPARE COMMAND WITH NORMAL PRIORITY");
+		final int requestId = createId();
+		Intent i = buildTaskWithNormalPriorityIntent(application, requestId, new ConcatenateCommand(argumentA,argumentB));
 		return runRequest(requestId, i);
 	}
 
 	// =========================================
 
 	public void cancelCommand(int requestId) {
-		Intent i = new Intent(application, SFCommandExecutorService.class);
-		i.setAction(SFCommandExecutorService.ACTION_CANCEL_COMMAND);
-		i.putExtra(SFCommandExecutorService.EXTRA_REQUEST_ID, requestId);
+		Intent i = new Intent(application, CommandExecutorService.class);
+		i.setAction(CommandExecutorService.ACTION_CANCEL_COMMAND);
+		i.putExtra(CommandExecutorService.EXTRA_REQUEST_ID, requestId);
 
 		application.startService(i);
 		pendingActivities.remove(requestId);
@@ -78,8 +87,8 @@ public class SFServiceHelper {
 		return pendingActivities.get(requestId) != null;
 	}
 
-	public boolean check(Intent intent, Class<? extends SFBaseCommand> clazz) {
-		Serializable commandExtra = intent.getSerializableExtra(SFCommandExecutorService.EXTRA_COMMAND);
+	public boolean check(Intent intent, Class<? extends BaseCommand<?>> clazz) {
+		Serializable commandExtra = intent.getSerializableExtra(CommandExecutorService.EXTRA_COMMAND);
 		return commandExtra != null && commandExtra.getClass().equals(clazz);
 	}
 
@@ -92,19 +101,28 @@ public class SFServiceHelper {
 		application.startService(i);
 		return requestId;
 	}
-
-	private Intent createIntent(final Context context, SFBaseCommand command,final int requestId) {
-		Intent i = new Intent(context, SFCommandExecutorService.class);
-		i.setAction(SFCommandExecutorService.ACTION_EXECUTE_COMMAND);
-		i.putExtra(SFCommandExecutorService.EXTRA_COMMAND, command);
-		i.putExtra(SFCommandExecutorService.EXTRA_REQUEST_ID, requestId);
-		i.putExtra(SFCommandExecutorService.EXTRA_STATUS_RECEIVER,
+ 
+	private Intent buildTaskWithNormalPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
+		return createIntent(context, requestId, command, ComparableFutureTask.NORMAL_PRIORITY);
+	}
+	
+	private Intent buildTaskWithHighPriorityIntent(final Context context,final int requestId,BaseCommand<?> command){
+		return createIntent(context, requestId, command, ComparableFutureTask.HIGH_PRIORITY);
+	}
+	
+	private Intent createIntent(final Context context,final int requestId,BaseCommand<?> command,int priority) {
+		Intent i = new Intent(context, CommandExecutorService.class);
+		i.setAction(CommandExecutorService.ACTION_EXECUTE_COMMAND);
+		i.putExtra(CommandExecutorService.EXTRA_COMMAND, command);
+		i.putExtra(CommandExecutorService.EXTRA_COMMAND_PRIORITY, priority);
+		i.putExtra(CommandExecutorService.EXTRA_REQUEST_ID, requestId);
+		i.putExtra(CommandExecutorService.EXTRA_STATUS_RECEIVER,
 				new ResultReceiver(new Handler()) {
 					@Override
 					protected void onReceiveResult(int resultCode,Bundle resultData) {
 						Intent originalIntent = pendingActivities.get(requestId);
 						if (isPending(requestId)) {
-							if (resultCode != CommandExecutor.RESPONSE_PROGRESS) {
+							if (resultCode != NotifySubscriberUtil.RESPONSE_PROGRESS) {
 								pendingActivities.remove(requestId);
 							}
 
