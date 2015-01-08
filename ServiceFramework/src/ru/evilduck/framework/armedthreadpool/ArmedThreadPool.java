@@ -24,7 +24,7 @@ import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
 import ru.evilduck.framework.service.ErrorProcessor;
 import ru.evilduck.framework.service.NotifySubscriberUtil;
-import ru.evilduck.framework.service.OnCompletedCommandListener;
+import ru.evilduck.framework.service.interfaces.OnCompletedCommandListener;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.ResultReceiver;

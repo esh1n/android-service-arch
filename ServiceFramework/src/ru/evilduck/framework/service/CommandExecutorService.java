@@ -16,6 +16,8 @@
  */
 package ru.evilduck.framework.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ru.evilduck.framework.SFApplication;
@@ -25,21 +27,25 @@ import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
+import ru.evilduck.framework.service.interfaces.CommandExecutable;
+import ru.evilduck.framework.service.interfaces.OnCompletedCommandListener;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.ResultReceiver;
 import android.util.Log;
 
-public class CommandExecutorService extends Service implements OnCompletedCommandListener,CommandExecutable {
+public class CommandExecutorService extends Service implements
+		OnCompletedCommandListener, CommandExecutable {
 
 	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 1;
 
 	private ArmedThreadPool executorParallel = ArmedThreadPool.newFixedThreadPool(NUM_THREADS_OF_PARALLEL_EXECUTOR);
 
 	private ConcurrentHashMap<Integer, RunningTask> runningTasks = new ConcurrentHashMap<Integer, RunningTask>();
-	
-	private TaskIntentPucker taskIntentPucker=new TaskIntentPucker();;
+	private Map<String, ExecutorAction> serviceActions = new HashMap<String, ExecutorAction>();
+
+	private TaskIntentPucker taskIntentPucker = new TaskIntentPucker();;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -50,7 +56,38 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	public void onCreate() {
 		super.onCreate();
 		executorParallel.setOnCompletedCommandListener(this);
+		assignActionToService();
 	}
+
+	private void assignActionToService() {
+		serviceActions.put(ACTION_EXECUTE_COMMAND, executeCommandAction);
+		serviceActions.put(ACTION_CANCEL_COMMAND, cancelCommandAction);
+	}
+
+	private ExecutorAction executeCommandAction = new ExecutorAction() {
+
+		@Override
+		public void execute() {
+			RunningTask task = unpuckIntentToTask();
+			Log.d("Test", "Submit task and put it to wrapper queue");
+			runningTasks.put(task.getId(), task);
+			executorParallel.submit(task);
+		}
+	};
+	
+	private ExecutorAction cancelCommandAction  = new ExecutorAction() {
+
+		@Override
+		public void execute() {
+			int commandId = taskIntentPucker.getCommandId();
+			RunningTask runningCommand = runningTasks.get(commandId);
+			if (runningCommand != null) {
+				runningCommand.cancel(true);
+			}
+		}
+	};
+	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
@@ -61,31 +98,21 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d("Test", "onStartCommand");
 		taskIntentPucker.replaceIntent(intent);
-		if (ACTION_EXECUTE_COMMAND.equals(intent.getAction())) {
-			RunningTask task=unpuckIntentToTask(intent);
-			Log.d("Test", "Submit task and put it to wrapper queue");
-			runningTasks.put(task.getId(), task);
-			executorParallel.submit(task);
+		ExecutorAction action=serviceActions.get(intent.getAction());
+		if(action!=null){
+			action.execute();
 		}
-		if (ACTION_CANCEL_COMMAND.equals(intent.getAction())) {
-			int commandId=taskIntentPucker.getCommandId();
-			RunningTask runningCommand = runningTasks.get(commandId);
-			if (runningCommand != null) {
-				runningCommand.cancel(true);
-			}
-		}
-
 		return START_NOT_STICKY;
 	}
 
 	@Override
-	public RunningTask unpuckIntentToTask(Intent newIntent){
-		int priority=taskIntentPucker.getPriority();
-		BaseCommand command=taskIntentPucker.getCommand();
-		ResultReceiver resultReceiver=taskIntentPucker.getReceiver();
-		int id =taskIntentPucker.getCommandId();
-		CallableCommandWrapper commandWrapper=new CallableCommandWrapper(getApplicationContext(), command);
-		return new RunningTaskWithPriority(id,commandWrapper,resultReceiver,priority);
+	public RunningTask unpuckIntentToTask() {
+		int priority = taskIntentPucker.getPriority();
+		BaseCommand command = taskIntentPucker.getCommand();
+		ResultReceiver resultReceiver = taskIntentPucker.getReceiver();
+		int id = taskIntentPucker.getCommandId();
+		CallableCommandWrapper commandWrapper = new CallableCommandWrapper(getApplicationContext(), command);
+		return new RunningTaskWithPriority(id, commandWrapper, resultReceiver,priority);
 	}
 
 	@Override
@@ -96,8 +123,7 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 			Log.d("Test", "STOP SELF because No Tasks");
 			stopSelf();
 		}
-		
+
 	}
-    
-	
+
 }
