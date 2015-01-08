@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import ru.evilduck.framework.armedthreadpool.wrapper.CallableCommandWrapper;
 import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
+import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
 import ru.evilduck.framework.service.ErrorProcessor;
 import ru.evilduck.framework.service.NotifySubscriberUtil;
@@ -74,7 +75,7 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 	 */
 	public <T extends Serializable> Future<?> submit(BaseCommand<T> command,int priority, ResultReceiver callback,int id, Context context) {
 		CallableCommandWrapper wrapper = new CallableCommandWrapper(context, command);
-		RunningTask task = new RunningTask(id,wrapper,callback, priority);
+		RunningTaskWithPriority task = new RunningTaskWithPriority(id,wrapper,callback, priority);
 		return super.submit(task);
 	}
 
@@ -92,9 +93,8 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 			if (t == null) {
 				try {
 					if (futureTask.isDone()) {
-						Serializable result = futureTask.get();
+						Serializable result = (Serializable) futureTask.get();
 						if (result != null) {
-							Log.d("Test","SEND RESULT OF TASK WITH PRIORITY "+futureTask.getPriority());
 							NotifySubscriberUtil.notifySuccess(result, callback);
 						}
 						else{

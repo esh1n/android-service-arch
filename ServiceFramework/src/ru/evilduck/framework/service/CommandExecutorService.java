@@ -23,6 +23,7 @@ import ru.evilduck.framework.armedthreadpool.ArmedThreadPool;
 import ru.evilduck.framework.armedthreadpool.wrapper.CallableCommandWrapper;
 import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
+import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
 import android.app.Service;
 import android.content.Intent;
@@ -33,8 +34,6 @@ import android.util.Log;
 public class CommandExecutorService extends Service implements OnCompletedCommandListener,CommandExecutable {
 
 	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 1;
-
-	
 	
 	public static final String EXTRA_COMMAND_PRIORITY = SFApplication.PACKAGE.concat(".EXTRA_COMMAND_PRIORITY");
 
@@ -84,7 +83,7 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 		CallableCommandWrapper commandWrapper=new CallableCommandWrapper(getApplicationContext(), command);
 		ResultReceiver resultReceiver=getReceiver(intent);
 		int id =getCommandId(intent);
-		return new RunningTask(id,commandWrapper,resultReceiver,priority);
+		return new RunningTaskWithPriority(id,commandWrapper,resultReceiver,priority);
 	}
 	
 	
