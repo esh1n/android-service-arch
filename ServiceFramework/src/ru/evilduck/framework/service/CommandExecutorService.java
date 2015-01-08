@@ -34,13 +34,12 @@ import android.util.Log;
 public class CommandExecutorService extends Service implements OnCompletedCommandListener,CommandExecutable {
 
 	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 1;
-	
-	public static final String EXTRA_COMMAND_PRIORITY = SFApplication.PACKAGE.concat(".EXTRA_COMMAND_PRIORITY");
 
 	private ArmedThreadPool executorParallel = ArmedThreadPool.newFixedThreadPool(NUM_THREADS_OF_PARALLEL_EXECUTOR);
 
-
 	private ConcurrentHashMap<Integer, RunningTask> runningTasks = new ConcurrentHashMap<Integer, RunningTask>();
+	
+	private TaskIntentPucker taskIntentPucker=new TaskIntentPucker();;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -61,6 +60,7 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d("Test", "onStartCommand");
+		taskIntentPucker.replaceIntent(intent);
 		if (ACTION_EXECUTE_COMMAND.equals(intent.getAction())) {
 			RunningTask task=unpuckIntentToTask(intent);
 			Log.d("Test", "Submit task and put it to wrapper queue");
@@ -68,7 +68,8 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 			executorParallel.submit(task);
 		}
 		if (ACTION_CANCEL_COMMAND.equals(intent.getAction())) {
-			RunningTask runningCommand = runningTasks.get(getCommandId(intent));
+			int commandId=taskIntentPucker.getCommandId();
+			RunningTask runningCommand = runningTasks.get(commandId);
 			if (runningCommand != null) {
 				runningCommand.cancel(true);
 			}
@@ -77,30 +78,14 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 		return START_NOT_STICKY;
 	}
 
-	private RunningTask unpuckIntentToTask(Intent intent){
-		int priority=getPriority(intent);
-		BaseCommand command=getCommand(intent);
+	@Override
+	public RunningTask unpuckIntentToTask(Intent newIntent){
+		int priority=taskIntentPucker.getPriority();
+		BaseCommand command=taskIntentPucker.getCommand();
+		ResultReceiver resultReceiver=taskIntentPucker.getReceiver();
+		int id =taskIntentPucker.getCommandId();
 		CallableCommandWrapper commandWrapper=new CallableCommandWrapper(getApplicationContext(), command);
-		ResultReceiver resultReceiver=getReceiver(intent);
-		int id =getCommandId(intent);
 		return new RunningTaskWithPriority(id,commandWrapper,resultReceiver,priority);
-	}
-	
-	
-
-	private ResultReceiver getReceiver(Intent intent) {
-		return intent.getParcelableExtra(EXTRA_STATUS_RECEIVER);
-	}
-
-	private BaseCommand getCommand(Intent intent) {
-		return (BaseCommand) intent.getSerializableExtra(EXTRA_COMMAND);
-	}
-	private int getPriority(Intent intent) {
-		return intent.getIntExtra(EXTRA_COMMAND_PRIORITY, ComparableFutureTask.NORMAL_PRIORITY);
-	}
-
-	private int getCommandId(Intent intent) {
-		return intent.getIntExtra(EXTRA_REQUEST_ID, -1);
 	}
 
 	@Override

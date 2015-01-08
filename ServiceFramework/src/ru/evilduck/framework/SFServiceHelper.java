@@ -26,6 +26,7 @@ import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
 import ru.evilduck.framework.service.CommandExecutable;
 import ru.evilduck.framework.service.NotifySubscriberUtil;
 import ru.evilduck.framework.service.CommandExecutorService;
+import ru.evilduck.framework.service.TaskIntentPucker;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -97,7 +98,7 @@ public class SFServiceHelper {
 	public void cancelCommand(int requestId) {
 		Intent i = new Intent(application, CommandExecutorService.class);
 		i.setAction(CommandExecutorService.ACTION_CANCEL_COMMAND);
-		i.putExtra(CommandExecutorService.EXTRA_REQUEST_ID, requestId);
+		i.putExtra(TaskIntentPucker.EXTRA_REQUEST_ID, requestId);
 
 		application.startService(i);
 		pendingActivities.remove(requestId);
@@ -108,7 +109,7 @@ public class SFServiceHelper {
 	}
 
 	public boolean check(Intent intent, Class<? extends BaseCommand<?>> clazz) {
-		Serializable commandExtra = intent.getSerializableExtra(CommandExecutorService.EXTRA_COMMAND);
+		Serializable commandExtra = new TaskIntentPucker(intent).getCommand();
 		return commandExtra != null && commandExtra.getClass().equals(clazz);
 	}
 
@@ -140,31 +141,30 @@ public class SFServiceHelper {
 	}
 	
 	private Intent createIntent(final Context context,final int requestId,BaseCommand<?> command,int priority) {
-		Intent i = new Intent(context, CommandExecutorService.class);
-		i.setAction(CommandExecutable.ACTION_EXECUTE_COMMAND);
-		i.putExtra(CommandExecutable.EXTRA_COMMAND, command);
-		i.putExtra(CommandExecutable.EXTRA_REQUEST_ID, requestId);
-		i.putExtra(CommandExecutable.EXTRA_STATUS_RECEIVER,
-				new ResultReceiver(new Handler()) {
-					@Override
-					protected void onReceiveResult(int resultCode,Bundle resultData) {
-						Intent originalIntent = pendingActivities.get(requestId);
-						if (isPending(requestId)) {
-							if (resultCode != NotifySubscriberUtil.RESPONSE_PROGRESS) {
-								pendingActivities.remove(requestId);
-							}
+		Intent taskIntentForExecutor = new Intent(context, CommandExecutorService.class);
+		taskIntentForExecutor.setAction(CommandExecutable.ACTION_EXECUTE_COMMAND);
+		
+		ResultReceiver callback=new ResultReceiver(new Handler()) {
+			@Override
+			protected void onReceiveResult(int resultCode,Bundle resultData) {
+				Intent originalIntent = pendingActivities.get(requestId);
+				if (isPending(requestId)) {
+					if (resultCode != NotifySubscriberUtil.RESPONSE_PROGRESS) {
+						pendingActivities.remove(requestId);
+					}
 
-							for (SFServiceCallbackListener currentListener : currentListeners) {
-								if (currentListener != null) {
-									currentListener.onServiceCallback(requestId, originalIntent,resultCode, resultData);
-								}
-							}
+					for (SFServiceCallbackListener currentListener : currentListeners) {
+						if (currentListener != null) {
+							currentListener.onServiceCallback(requestId, originalIntent,resultCode, resultData);
 						}
 					}
-				});
-		i.putExtra(CommandExecutorService.EXTRA_COMMAND_PRIORITY, priority);
-
-		return i;
+				}
+			}
+		};
+		
+		TaskIntentPucker taskIntentPucker=new TaskIntentPucker(taskIntentForExecutor);
+		taskIntentPucker.puckData(requestId, callback, command, priority);
+		return taskIntentForExecutor;
 	}
 
 }
