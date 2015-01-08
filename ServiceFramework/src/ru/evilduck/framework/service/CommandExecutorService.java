@@ -17,7 +17,6 @@
 package ru.evilduck.framework.service;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 
 import ru.evilduck.framework.SFApplication;
 import ru.evilduck.framework.armedthreadpool.ArmedThreadPool;
@@ -31,19 +30,11 @@ import android.os.IBinder;
 import android.os.ResultReceiver;
 import android.util.Log;
 
-public class CommandExecutorService extends Service implements OnCompletedCommandListener {
+public class CommandExecutorService extends Service implements OnCompletedCommandListener,CommandExecutable {
 
 	private static final int NUM_THREADS_OF_PARALLEL_EXECUTOR = 1;
 
-	public static final String ACTION_EXECUTE_COMMAND = SFApplication.PACKAGE.concat(".ACTION_EXECUTE_COMMAND");
-
-	public static final String ACTION_CANCEL_COMMAND = SFApplication.PACKAGE.concat(".ACTION_CANCEL_COMMAND");
-
-	public static final String EXTRA_REQUEST_ID = SFApplication.PACKAGE.concat(".EXTRA_REQUEST_ID");
-
-	public static final String EXTRA_STATUS_RECEIVER = SFApplication.PACKAGE.concat(".STATUS_RECEIVER");
-
-	public static final String EXTRA_COMMAND = SFApplication.PACKAGE.concat(".EXTRA_COMMAND");
+	
 	
 	public static final String EXTRA_COMMAND_PRIORITY = SFApplication.PACKAGE.concat(".EXTRA_COMMAND_PRIORITY");
 
@@ -65,7 +56,6 @@ public class CommandExecutorService extends Service implements OnCompletedComman
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-//		executorTransactional.shutdownNow();
 		executorParallel.shutdownNow();
 	}
 

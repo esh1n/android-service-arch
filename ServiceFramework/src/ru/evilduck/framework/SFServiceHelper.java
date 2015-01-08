@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.handlers.BaseCommand;
 import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
+import ru.evilduck.framework.service.CommandExecutable;
 import ru.evilduck.framework.service.NotifySubscriberUtil;
 import ru.evilduck.framework.service.CommandExecutorService;
 import android.app.Application;
@@ -140,11 +141,10 @@ public class SFServiceHelper {
 	
 	private Intent createIntent(final Context context,final int requestId,BaseCommand<?> command,int priority) {
 		Intent i = new Intent(context, CommandExecutorService.class);
-		i.setAction(CommandExecutorService.ACTION_EXECUTE_COMMAND);
-		i.putExtra(CommandExecutorService.EXTRA_COMMAND, command);
-		i.putExtra(CommandExecutorService.EXTRA_COMMAND_PRIORITY, priority);
-		i.putExtra(CommandExecutorService.EXTRA_REQUEST_ID, requestId);
-		i.putExtra(CommandExecutorService.EXTRA_STATUS_RECEIVER,
+		i.setAction(CommandExecutable.ACTION_EXECUTE_COMMAND);
+		i.putExtra(CommandExecutable.EXTRA_COMMAND, command);
+		i.putExtra(CommandExecutable.EXTRA_REQUEST_ID, requestId);
+		i.putExtra(CommandExecutable.EXTRA_STATUS_RECEIVER,
 				new ResultReceiver(new Handler()) {
 					@Override
 					protected void onReceiveResult(int resultCode,Bundle resultData) {
@@ -162,6 +162,7 @@ public class SFServiceHelper {
 						}
 					}
 				});
+		i.putExtra(CommandExecutorService.EXTRA_COMMAND_PRIORITY, priority);
 
 		return i;
 	}
