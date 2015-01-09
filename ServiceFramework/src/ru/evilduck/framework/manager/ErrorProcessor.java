@@ -1,4 +1,4 @@
-package ru.evilduck.framework.service;
+package ru.evilduck.framework.manager;
 
 import ru.evilduck.framework.R;
 import ru.evilduck.framework.exception.InternetConnectionException;

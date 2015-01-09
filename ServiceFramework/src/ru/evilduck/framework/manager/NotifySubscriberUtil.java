@@ -1,4 +1,4 @@
-package ru.evilduck.framework.service;
+package ru.evilduck.framework.manager;
 
 import java.io.Serializable;
 

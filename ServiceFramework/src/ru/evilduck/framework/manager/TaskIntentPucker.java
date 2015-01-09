@@ -1,4 +1,4 @@
-package ru.evilduck.framework.service;
+package ru.evilduck.framework.manager;
 
 import android.content.Intent;
 import android.os.ResultReceiver;

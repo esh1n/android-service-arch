@@ -19,7 +19,7 @@ package ru.evilduck.framework.ui;
 import ru.evilduck.framework.R;
 import ru.evilduck.framework.SFBaseActivity;
 import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
-import ru.evilduck.framework.service.NotifySubscriberUtil;
+import ru.evilduck.framework.manager.NotifySubscriberUtil;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
