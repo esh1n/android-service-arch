@@ -24,7 +24,7 @@ import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.handlers.BaseCommand;
 import ru.evilduck.framework.handlers.implemetation.ConcatenateCommand;
 import ru.evilduck.framework.manager.NotifySubscriberUtil;
-import ru.evilduck.framework.manager.TaskIntentPucker;
+import ru.evilduck.framework.manager.TaskIntentBuilder;
 import ru.evilduck.framework.service.CommandExecutorService;
 import ru.evilduck.framework.service.interfaces.CommandExecutable;
 import android.app.Application;
@@ -98,7 +98,7 @@ public class SFServiceHelper {
 	public void cancelCommand(int requestId) {
 		Intent i = new Intent(application, CommandExecutorService.class);
 		i.setAction(CommandExecutorService.ACTION_CANCEL_COMMAND);
-		i.putExtra(TaskIntentPucker.EXTRA_REQUEST_ID, requestId);
+		i.putExtra(TaskIntentBuilder.EXTRA_REQUEST_ID, requestId);
 
 		application.startService(i);
 		pendingActivities.remove(requestId);
@@ -109,7 +109,7 @@ public class SFServiceHelper {
 	}
 
 	public boolean check(Intent intent, Class<? extends BaseCommand<?>> clazz) {
-		Serializable commandExtra = new TaskIntentPucker(intent).getCommand();
+		Serializable commandExtra = new TaskIntentBuilder(intent).getCommand();
 		return commandExtra != null && commandExtra.getClass().equals(clazz);
 	}
 
@@ -162,7 +162,7 @@ public class SFServiceHelper {
 			}
 		};
 		
-		TaskIntentPucker taskIntentPucker=new TaskIntentPucker(taskIntentForExecutor);
+		TaskIntentBuilder taskIntentPucker=new TaskIntentBuilder(taskIntentForExecutor);
 		taskIntentPucker.puckData(requestId, callback, command, priority);
 		return taskIntentForExecutor;
 	}

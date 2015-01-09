@@ -27,7 +27,7 @@ import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
-import ru.evilduck.framework.manager.TaskIntentPucker;
+import ru.evilduck.framework.manager.TaskIntentBuilder;
 import ru.evilduck.framework.service.interfaces.CommandExecutable;
 import ru.evilduck.framework.service.interfaces.ExecutorAction;
 import ru.evilduck.framework.service.interfaces.OnCompletedCommandListener;
@@ -47,7 +47,7 @@ public class CommandExecutorService extends Service implements
 	private ConcurrentHashMap<Integer, RunningTask> runningTasks = new ConcurrentHashMap<Integer, RunningTask>();
 	private Map<String, ExecutorAction> serviceActions = new HashMap<String, ExecutorAction>();
 
-	private TaskIntentPucker taskIntentPucker = new TaskIntentPucker();;
+	private TaskIntentBuilder taskIntentPucker = new TaskIntentBuilder();;
 
 	@Override
 	public IBinder onBind(Intent intent) {

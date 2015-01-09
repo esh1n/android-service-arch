@@ -9,7 +9,7 @@ import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
 
-public class TaskIntentPucker {
+public class TaskIntentBuilder {
 	
 
 	public static final String EXTRA_REQUEST_ID = SFApplication.PACKAGE.concat(".EXTRA_REQUEST_ID");
@@ -22,9 +22,9 @@ public class TaskIntentPucker {
 
 	private Intent intent;
 
-	public TaskIntentPucker(){
+	public TaskIntentBuilder(){
 	}
-	public TaskIntentPucker(Intent intent){
+	public TaskIntentBuilder(Intent intent){
 		this.intent=intent;
 	}
 	
