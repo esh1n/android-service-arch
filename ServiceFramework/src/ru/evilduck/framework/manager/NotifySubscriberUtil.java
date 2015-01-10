@@ -29,6 +29,10 @@ public class NotifySubscriberUtil {
 		Log.d("Test", "notifyFailure ");
 		sendUpdate(RESPONSE_FAILURE, errorBundle,sfCallback );
 	}
+	public static void  notifyFailure(Throwable throwable,ResultReceiver sfCallback) {
+		Bundle errorBundle=ErrorProcessor.getExceptionBundle(throwable);
+		sendUpdate(RESPONSE_FAILURE, errorBundle,sfCallback );
+	}
 	public static void notifyNullResult(ResultReceiver callback) {
 		Bundle bundle = new Bundle();
 		bundle.putInt(ERROR_CODE,  ErrorProcessor.RESULT_NULL_ERROR);

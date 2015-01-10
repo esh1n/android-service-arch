@@ -22,7 +22,9 @@ import ru.evilduck.framework.armedthreadpool.wrapper.ComparableFutureTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTask;
 import ru.evilduck.framework.armedthreadpool.wrapper.RunningTaskWithPriority;
 import ru.evilduck.framework.handlers.BaseCommand;
+import ru.evilduck.framework.manager.CommandExecutorWrapper;
 import ru.evilduck.framework.manager.ErrorProcessor;
+import ru.evilduck.framework.manager.ExecutionResult;
 import ru.evilduck.framework.manager.NotifySubscriberUtil;
 import ru.evilduck.framework.service.interfaces.OnCompletedCommandListener;
 import android.content.Context;
@@ -90,33 +92,27 @@ public class ArmedThreadPool extends ThreadPoolExecutor {
 		if (r != null && r instanceof RunningTask) {
 			RunningTask futureTask = (RunningTask) r;
 			ResultReceiver callback = futureTask.getCallback();
-			if (t == null) {
-				try {
-					if (futureTask.isDone()) {
-						Serializable result = (Serializable) futureTask.get();
-						if (result != null) {
-							NotifySubscriberUtil.notifySuccess(result, callback);
-						}
-						else{
-							NotifySubscriberUtil.notifyNullResult(callback);
-						}
+			if(t!=null){
+				Log.e(TAG, "exception in throwable afterexecute");
+				NotifySubscriberUtil.notifyFailure(t, callback);
+			}
+			if (futureTask.isDone()) {
+				ExecutionResult executionResult=CommandExecutorWrapper.tryCommand(futureTask);
+				if(executionResult.getThrowable()!=null){
+					Log.e(TAG, " TASK WAS FAILURED");
+					NotifySubscriberUtil.notifyFailure(executionResult.getThrowable(), callback);
+				}
+				else{
+					Serializable commandResult=executionResult.getResult();
+					if (commandResult != null) {
+						NotifySubscriberUtil.notifySuccess(commandResult, callback);
 					}
-				} catch (CancellationException ce) {
-					t = ce;
-				} catch (ExecutionException ee) {
-					t = ee.getCause();
-				} catch (InterruptedException ie) {
-					t = ie;
-					Thread.currentThread().interrupt(); // ignore/reset
+					else{
+						NotifySubscriberUtil.notifyNullResult(callback);
+					}
 				}
 			} else {
-				Log.e(TAG, "exception ib throwable afterexecute");
-				System.out.println(" ");
-			}
-			if (t != null) {
-				Log.e(TAG, "Error in ThreadPool " + t);
-				Bundle exceptionBunble=ErrorProcessor.getExceptionBundle(t);
-				NotifySubscriberUtil.notifyFailure(exceptionBunble, callback);
+				Log.e(TAG, " TASK ISN'T DONE");
 			}
 			onCompleteCommand(futureTask.getId());
 		}
